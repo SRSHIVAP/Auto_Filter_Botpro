@@ -1,3 +1,4 @@
+import os
 import plugins.monkey_patch
 import sys
 from pyrogram import Client, idle, __version__
@@ -82,6 +83,7 @@ def dreamxbotz_plugins_handler(app, plugins_dir: str | Path = "plugins", package
 
     return loaded_plugins
 
+
 async def dreamxbotz_start():
     print('\n\nInitalizing DreamxBotz')
     await dreamxbotz.start()
@@ -94,7 +96,7 @@ async def dreamxbotz_start():
     else:
         logging.info("⚠️ No Plugins Loaded.")
     if ON_HEROKU:
-        asyncio.create_task(ping_server()) 
+        asyncio.create_task(ping_server())
     b_users, b_chats = await db.get_banned()
     temp.BANNED_USERS = b_users
     temp.BANNED_CHATS = b_chats
@@ -117,24 +119,30 @@ async def dreamxbotz_start():
     tz = pytz.timezone('Asia/Kolkata')
     today = date.today()
     now = datetime.now(tz)
-    time = now.strftime("%H:%M:%S %p")
-    await dreamxbotz.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_TXT.format(temp.B_LINK, today, time))
+    current_time = now.strftime("%H:%M:%S %p")
+    await dreamxbotz.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_TXT.format(temp.B_LINK, today, current_time))
+
+    # Web server setup — INSIDE the async function
+    bind_address = "0.0.0.0"
+    PORT = int(os.environ.get("PORT", 8000))
     app = web.AppRunner(await web_server())
     await app.setup()
-    bind_address = "0.0.0.0"
-    await web.TCPSite(app, bind_address, PORT).start()
+    site = web.TCPSite(app, bind_address, PORT)
+    await site.start()
+
     dreamxbotz.loop.create_task(keep_alive())
     await idle()
-    
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     while True:
         try:
             loop.run_until_complete(dreamxbotz_start())
-            break  
+            break
         except FloodWait as e:
             print(f"FloodWait! Sleeping for {e.value} seconds.")
-            time.sleep(e.value) 
+            time.sleep(e.value)
         except KeyboardInterrupt:
             logging.info('Service Stopped Bye 👋')
             break

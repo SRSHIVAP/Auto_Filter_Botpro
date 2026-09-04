@@ -112,7 +112,7 @@ async def extract_data_handler(client: Client, query: CallbackQuery):
 
         media_info = await asyncio.wait_for(
             asyncio.to_thread(MediaInfo.parse, temp_path, library_file=lib_path),
-            timeout=6
+            timeout=30
         )
 
         audio_tracks = []
